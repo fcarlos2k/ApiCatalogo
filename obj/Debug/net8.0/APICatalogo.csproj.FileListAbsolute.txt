@@ -170,3 +170,4 @@ C:\Users\fabricio.araujo\Documents\Projetos\APICatalogo\APICatalogo\obj\Debug\ne
 C:\Users\fabricio.araujo\Documents\Projetos\APICatalogo\APICatalogo\obj\Debug\net8.0\APICatalogo.genruntimeconfig.cache
 C:\Users\fabricio.araujo\Documents\Projetos\APICatalogo\APICatalogo\obj\Debug\net8.0\ref\APICatalogo.dll
 C:\Users\fabricio.araujo\Documents\Projetos\APICatalogo\APICatalogo\obj\Debug\net8.0\staticwebassets.upToDateCheck.txt
+C:\Users\fabricio.araujo\Documents\Projetos\APICatalogo\APICatalogo\obj\Debug\net8.0\APICatalogo.sourcelink.json
