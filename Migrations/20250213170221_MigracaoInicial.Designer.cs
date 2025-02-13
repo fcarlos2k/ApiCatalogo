@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace APICatalogo.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20250212163158_PopulaCategorias")]
-    partial class PopulaCategorias
+    [Migration("20250213170221_MigracaoInicial")]
+    partial class MigracaoInicial
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -40,8 +40,8 @@ namespace APICatalogo.Migrations
 
                     b.Property<string>("Nome")
                         .IsRequired()
-                        .HasMaxLength(80)
-                        .HasColumnType("nvarchar(80)");
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
 
                     b.HasKey("CategoriaId");
 
@@ -81,6 +81,7 @@ namespace APICatalogo.Migrations
                         .HasColumnType("nvarchar(80)");
 
                     b.Property<decimal>("Preco")
+                        .HasPrecision(10, 2)
                         .HasColumnType("decimal(10,2)");
 
                     b.HasKey("ProdutoId");

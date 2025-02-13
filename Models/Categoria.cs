@@ -11,15 +11,15 @@ public class Categoria
     {
          Produtos = new Collection<Produto>();
     }
-    [Key]
+    //[Key]
     public int CategoriaId { get; set; }
     
-    [Required]
-    [StringLength(80)]
+    //[Required]
+    //[StringLength(80)]
     public string? Nome  { get; set; }
-    
-    [Required]
-    [StringLength(300)]
+
+    //[Required]
+    //[StringLength(300)]
     public string? ImagemUrl{ get; set; }
 
     public ICollection<Produto>? Produtos { get; set; }

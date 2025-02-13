@@ -1,6 +1,4 @@
 ﻿using System;
-using APICatalogo.Models;
-using System.Collections.Generic;
 using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable

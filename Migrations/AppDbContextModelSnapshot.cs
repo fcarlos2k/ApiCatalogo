@@ -37,8 +37,8 @@ namespace APICatalogo.Migrations
 
                     b.Property<string>("Nome")
                         .IsRequired()
-                        .HasMaxLength(80)
-                        .HasColumnType("nvarchar(80)");
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
 
                     b.HasKey("CategoriaId");
 
@@ -78,6 +78,7 @@ namespace APICatalogo.Migrations
                         .HasColumnType("nvarchar(80)");
 
                     b.Property<decimal>("Preco")
+                        .HasPrecision(10, 2)
                         .HasColumnType("decimal(10,2)");
 
                     b.HasKey("ProdutoId");

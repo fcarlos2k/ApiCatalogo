@@ -17,7 +17,7 @@ namespace APICatalogo.Migrations
                 {
                     CategoriaId = table.Column<int>(type: "int", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
-                    Nome = table.Column<string>(type: "nvarchar(80)", maxLength: 80, nullable: false),
+                    Nome = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
                     ImagemUrl = table.Column<string>(type: "nvarchar(300)", maxLength: 300, nullable: false)
                 },
                 constraints: table =>
@@ -33,7 +33,7 @@ namespace APICatalogo.Migrations
                         .Annotation("SqlServer:Identity", "1, 1"),
                     Nome = table.Column<string>(type: "nvarchar(80)", maxLength: 80, nullable: false),
                     Descricao = table.Column<string>(type: "nvarchar(300)", maxLength: 300, nullable: false),
-                    Preco = table.Column<decimal>(type: "decimal(10,2)", nullable: false),
+                    Preco = table.Column<decimal>(type: "decimal(10,2)", precision: 10, scale: 2, nullable: false),
                     ImagemUrl = table.Column<string>(type: "nvarchar(300)", maxLength: 300, nullable: false),
                     Estoque = table.Column<float>(type: "real", nullable: false),
                     DataCadastro = table.Column<DateTime>(type: "datetime2", nullable: false),

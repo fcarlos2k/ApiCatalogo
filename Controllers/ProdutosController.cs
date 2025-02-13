@@ -2,6 +2,7 @@
 using APICatalogo.Models;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 
 namespace APICatalogo.Controllers
 {
@@ -19,35 +20,90 @@ namespace APICatalogo.Controllers
         [HttpGet]
         public ActionResult<IEnumerable<Produto>> Get()
         {
-            var produtos = _context.Produtos.ToList();
-            if (produtos is null)
+
+            try
             {
-                return NotFound("Produtos não encontrados...");
+                var produtos = _context.Produtos.AsNoTracking().Take(10).ToList();
+                if (produtos is null)
+                {
+                    return NotFound("Produtos não encontrados...");
+                }
+                return produtos;
             }
-            return produtos;
+            catch (Exception)
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError,
+                    "Ocorreu um problema ao tratar sua solicitação");
+            }
         }
 
         [HttpGet("{id:int}", Name = "ObterProduto")]
         public ActionResult<Produto> Get(int id)
         {
-            var produto = _context.Produtos.FirstOrDefault(p => p.ProdutoId == id);
-            if (produto == null)
+            try
             {
-                return NotFound("Produto não encontrado...");
+                var produto = _context.Produtos.AsNoTracking().FirstOrDefault(p => p.ProdutoId == id);
+                if (produto == null)
+                {
+                    return NotFound("Produto não encontrado...");
+                }
+                return produto;
             }
-            return produto;
+            catch (Exception)
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError,
+                "Ocorreu um problema ao tratar sua solicitação");
+            }
         }
 
         [HttpPost]
         public ActionResult Post(Produto produto)
         {
-            if (produto is null)
-                return BadRequest();
+            try
+            {
+                if (produto is null)
+                    return BadRequest();
 
-            _context.Produtos.Add(produto);
+                _context.Produtos.Add(produto);
+                _context.SaveChanges();
+
+                return new CreatedAtRouteResult("ObterProduto", new { id = produto.ProdutoId }, produto);
+            }
+            catch (Exception)
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError,
+              "Ocorreu um problema ao tratar sua solicitação");
+            }
+        }
+
+        [HttpPut]
+        public ActionResult Put(int id, Produto produto)
+        {
+            if (id != produto.ProdutoId)
+            {
+                return BadRequest();
+            }
+            _context.Entry(produto).State = Microsoft.EntityFrameworkCore.EntityState.Modified;
             _context.SaveChanges();
 
-            return new CreatedAtRouteResult("ObterProduto", new { id = produto.ProdutoId }, produto);
+            return Ok(produto);
+
         }
+
+        [HttpDelete]
+        public ActionResult Delete(int id)
+        {
+            var produto = _context.Produtos.FirstOrDefault(p => p.ProdutoId == id);
+
+            if (produto is null)
+            {
+                return NotFound("Produto não localizado");
+            }
+            _context.Produtos.Remove(produto);
+            _context.SaveChanges();
+            return Ok(produto);
+        }
+
+
     }
 }
