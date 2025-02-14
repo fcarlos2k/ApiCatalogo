@@ -1,5 +1,6 @@
 using System.Text.Json.Serialization;
 using APICatalogo.Context;
+using APICatalogo.DTOs.Mappings;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -18,6 +19,8 @@ string sqlConnection = builder.Configuration.GetConnectionString("DefaultConnect
 
 builder.Services.AddDbContext<AppDbContext>(options =>
                  options.UseSqlServer(sqlConnection));
+
+builder.Services.AddAutoMapper(typeof(DtoMappingProfile));
 
 var app = builder.Build();
 

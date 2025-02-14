@@ -1,6 +1,7 @@
 ﻿using APICatalogo.Context;
+using APICatalogo.DTOs;
 using APICatalogo.Models;
-using Microsoft.AspNetCore.Http;
+using AutoMapper;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -12,15 +13,17 @@ namespace APICatalogo.Controllers
     {
         private readonly AppDbContext _context;
 
-        public ProdutosController(AppDbContext context)
+        private readonly IMapper _mapper;
+
+        public ProdutosController(AppDbContext context, IMapper mapper)
         {
             _context = context;
+            _mapper = mapper;
         }
 
         [HttpGet]
-        public ActionResult<IEnumerable<Produto>> Get()
+        public ActionResult<IEnumerable<ProdutoDto>> Get()
         {
-
             try
             {
                 var produtos = _context.Produtos.AsNoTracking().Take(10).ToList();
@@ -28,7 +31,7 @@ namespace APICatalogo.Controllers
                 {
                     return NotFound("Produtos não encontrados...");
                 }
-                return produtos;
+                return Ok(produtos);
             }
             catch (Exception)
             {
@@ -38,7 +41,7 @@ namespace APICatalogo.Controllers
         }
 
         [HttpGet("{id:int}", Name = "ObterProduto")]
-        public ActionResult<Produto> Get(int id)
+        public ActionResult<IEnumerable<ProdutoDto>> Get(int id)
         {
             try
             {
@@ -47,7 +50,7 @@ namespace APICatalogo.Controllers
                 {
                     return NotFound("Produto não encontrado...");
                 }
-                return produto;
+                return Ok(produto);
             }
             catch (Exception)
             {
@@ -57,17 +60,27 @@ namespace APICatalogo.Controllers
         }
 
         [HttpPost]
-        public ActionResult Post(Produto produto)
+        public ActionResult<ProdutoDto> Post(ProdutoDto produtoDto)
         {
             try
             {
-                if (produto is null)
+                if (produtoDto is null)
                     return BadRequest();
+
+                var categoriaExiste = _context.Categorias.Any(c => c.CategoriaId == produtoDto.CategoriaId);
+                if (!categoriaExiste)
+                {
+                    return BadRequest("Categoria inválida. Certifique-se de que a categoria existe.");
+                }
+
+                var produto = _mapper.Map<Produto>(produtoDto);
 
                 _context.Produtos.Add(produto);
                 _context.SaveChanges();
 
-                return new CreatedAtRouteResult("ObterProduto", new { id = produto.ProdutoId }, produto);
+                var produtoRetorno = _mapper.Map<ProdutoDto>(produto);
+
+                return new CreatedAtRouteResult("ObterProduto", new { id = produto.ProdutoId }, produtoRetorno);
             }
             catch (Exception)
             {
@@ -77,21 +90,21 @@ namespace APICatalogo.Controllers
         }
 
         [HttpPut]
-        public ActionResult Put(int id, Produto produto)
+        public ActionResult<ProdutoDto> Put(int id, ProdutoDto produtoDto)
         {
-            if (id != produto.ProdutoId)
+            if (id != produtoDto.ProdutoId)
             {
                 return BadRequest();
             }
-            _context.Entry(produto).State = Microsoft.EntityFrameworkCore.EntityState.Modified;
+            _context.Entry(produtoDto).State = Microsoft.EntityFrameworkCore.EntityState.Modified;
             _context.SaveChanges();
 
-            return Ok(produto);
+            return Ok(produtoDto);
 
         }
 
         [HttpDelete]
-        public ActionResult Delete(int id)
+        public ActionResult<ProdutoDto> Delete(int id)
         {
             var produto = _context.Produtos.FirstOrDefault(p => p.ProdutoId == id);
 

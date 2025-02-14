@@ -1,6 +1,7 @@
 ﻿using APICatalogo.Context;
+using APICatalogo.DTOs;
 using APICatalogo.Models;
-using Microsoft.AspNetCore.Http;
+using AutoMapper;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -12,22 +13,34 @@ namespace APICatalogo.Controllers
     {
         private readonly AppDbContext _context;
 
-        public CategoriasController(AppDbContext context)
+        private readonly IMapper _mapper;
+
+        public CategoriasController(AppDbContext context, IMapper mapper)
         {
             _context = context;
+            _mapper = mapper;
         }
 
-        [HttpGet("produtos")]
-        public ActionResult<IEnumerable<Categoria>> GetCategriasProdutos()
+
+        [HttpGet("ComProdutos")]
+        public ActionResult<IEnumerable<CategoriaDto>> GetCategriasComProdutos()
         {
             try
             {
-                var categorias = _context.Categorias.AsNoTracking().Include(p => p.Produtos).Where(c => c.CategoriaId <= 5).ToList();
-                if (categorias is null)
+                var categorias = _context.Categorias
+                    .AsNoTracking()
+                    .Include(c => c.Produtos)
+                    .Where(c => c.CategoriaId <= 5)
+                    .ToList();
+
+                if (categorias == null || !categorias.Any())
                 {
-                    return NotFound("Categoria não encontrada...");
+                    return NotFound("Nenhuma categoria encontrada...");
                 }
-                return categorias;
+
+                var categoriaDtos = _mapper.Map<List<CategoriaDto>>(categorias);
+
+                return Ok(categoriaDtos);
             }
             catch (Exception)
             {
@@ -36,17 +49,19 @@ namespace APICatalogo.Controllers
             }
         }
 
+
+
         [HttpGet]
-        public ActionResult<IEnumerable<Categoria>> Get()
+        public ActionResult<IEnumerable<CategoriaDto>> Get()
         {
             try
             {
-                var categorias = _context.Categorias.AsNoTracking().Take(10).ToList();
-                if (categorias is null)
+                var categoriasDto = _context.Categorias.AsNoTracking().Take(10).ToList();
+                if (categoriasDto is null)
                 {
                     return NotFound("Categoria não encontrada...");
                 }
-                return categorias;
+                return Ok(categoriasDto);
             }
             catch (Exception)
             {
@@ -56,45 +71,52 @@ namespace APICatalogo.Controllers
         }
 
         [HttpGet("{id:int}", Name = "ObterCategoria")]
-        public ActionResult<Produto> Get(int id)
+        public ActionResult<CategoriaDto> Get(int id)
         {
-            var categoria = _context.Categorias.AsNoTracking().FirstOrDefault(c => c.CategoriaId == id);
-            if (categoria == null)
+            var categoriaDto = _context.Categorias.AsNoTracking().FirstOrDefault(c => c.CategoriaId == id);
+            if (categoriaDto == null)
             {
                 return NotFound("Categoria não encontrada...");
             }
-            return Ok(categoria);
+            return Ok(categoriaDto);
         }
 
+
         [HttpPost]
-        public ActionResult Post(Categoria categoria)
+        public ActionResult Post(CategoriaDto categoriaDto)
         {
-            if (categoria is null)
-                return BadRequest();
+            if (categoriaDto == null || string.IsNullOrWhiteSpace(categoriaDto.Nome))
+                return BadRequest("Nome da categoria é obrigatório.");
+
+            // Convertendo DTO para Entidade
+            var categoria = new Categoria
+            {
+                Nome = categoriaDto.Nome,
+                ImagemUrl = categoriaDto.ImagemUrl
+            };
 
             _context.Categorias.Add(categoria);
             _context.SaveChanges();
 
-            return new CreatedAtRouteResult("ObterCategoria",
-                new { id = categoria.CategoriaId }, categoria);
+            return CreatedAtRoute("ObterCategoria", new { id = categoria.CategoriaId }, categoria);
         }
 
         [HttpPut]
-        public ActionResult Put(int id, Categoria categoria)
+        public ActionResult Put(int id, CategoriaDto categoriaDto)
         {
-            if (id != categoria.CategoriaId)
+            if (id != categoriaDto.CategoriaId)
             {
                 return BadRequest();
             }
-            _context.Entry(categoria).State = Microsoft.EntityFrameworkCore.EntityState.Modified;
+            _context.Entry(categoriaDto).State = Microsoft.EntityFrameworkCore.EntityState.Modified;
             _context.SaveChanges();
 
-            return Ok(categoria);
+            return Ok(categoriaDto);
 
         }
 
         [HttpDelete]
-        public ActionResult<Categoria> Delete(int id)
+        public ActionResult<CategoriaDto> Delete(int id)
         {
             var categoria = _context.Categorias.FirstOrDefault(c => c.CategoriaId == id);
 
