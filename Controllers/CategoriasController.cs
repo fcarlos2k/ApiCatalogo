@@ -1,9 +1,11 @@
 ﻿using APICatalogo.Context;
 using APICatalogo.DTOs;
 using APICatalogo.Models;
+using APICatalogo.Repository.Interfaces;
 using AutoMapper;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+
 
 namespace APICatalogo.Controllers
 {
@@ -11,42 +13,11 @@ namespace APICatalogo.Controllers
     [ApiController]
     public class CategoriasController : ControllerBase
     {
-        private readonly AppDbContext _context;
+        private readonly ICategoria _service;
 
-        private readonly IMapper _mapper;
-
-        public CategoriasController(AppDbContext context, IMapper mapper)
+        public CategoriasController(ICategoria service)
         {
-            _context = context;
-            _mapper = mapper;
-        }
-
-
-        [HttpGet("ComProdutos")]
-        public ActionResult<IEnumerable<CategoriaDto>> GetCategriasComProdutos()
-        {
-            try
-            {
-                var categorias = _context.Categorias
-                    .AsNoTracking()
-                    .Include(c => c.Produtos)
-                    .Where(c => c.CategoriaId <= 5)
-                    .ToList();
-
-                if (categorias == null || !categorias.Any())
-                {
-                    return NotFound("Nenhuma categoria encontrada...");
-                }
-
-                var categoriaDtos = _mapper.Map<List<CategoriaDto>>(categorias);
-
-                return Ok(categoriaDtos);
-            }
-            catch (Exception)
-            {
-                return StatusCode(StatusCodes.Status500InternalServerError,
-                    "Ocorreu um problema ao tratar sua solicitação");
-            }
+            _service = service;
         }
 
 
@@ -56,12 +27,12 @@ namespace APICatalogo.Controllers
         {
             try
             {
-                var categoriasDto = _context.Categorias.AsNoTracking().Take(10).ToList();
-                if (categoriasDto is null)
+                var categorias = _service.Get();
+                if (!categorias.Any() || categorias == null)
                 {
-                    return NotFound("Categoria não encontrada...");
+                    return NotFound("Nenhuma categoria encontrada...");
                 }
-                return Ok(categoriasDto);
+                return Ok(categorias);
             }
             catch (Exception)
             {
@@ -73,60 +44,122 @@ namespace APICatalogo.Controllers
         [HttpGet("{id:int}", Name = "ObterCategoria")]
         public ActionResult<CategoriaDto> Get(int id)
         {
-            var categoriaDto = _context.Categorias.AsNoTracking().FirstOrDefault(c => c.CategoriaId == id);
-            if (categoriaDto == null)
+            try
             {
-                return NotFound("Categoria não encontrada...");
+                var categoriaDto = _service.GetById(id);
+                if (categoriaDto == null)
+                {
+                    return NotFound("Nenhuma categoria encontrada...");
+                }
+                return Ok(categoriaDto);
             }
-            return Ok(categoriaDto);
+            catch (Exception)
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError,
+                    "Ocorreu um problema ao tratar sua solicitação");
+            }
         }
+
+        [HttpGet("buscar/{nome}")]
+        public ActionResult<IEnumerable<CategoriaDto>> GetPorParteDoNome(string nome)
+        {
+            var categoriasDto = _service.GetPorParteDoNome(nome);
+
+            if (categoriasDto == null || !categoriasDto.Any())
+            {
+                return NotFound("Nenhuma categoria encontrada...");
+            }
+            return Ok(categoriasDto);
+        }
+
+
+        [HttpGet("ComProdutos")]
+        public ActionResult<IEnumerable<CategoriaDto>> GetCategriasComProdutos()
+        {
+            var categoriasDto = _service.GetCategriasComProdutos();
+
+            if (categoriasDto == null || !categoriasDto.Any())
+            {
+                return NotFound("Nenhuma categoria encontrada...");
+            }
+            return Ok(categoriasDto);
+        }
+
+
+
+        //[HttpGet("buscar/{nome}")]
+        //public ActionResult<IEnumerable<CategoriaDto>> GetPorParteDoNome(string nome)
+        //{
+        //    var categoria = _service _context.Categorias
+        //        .AsNoTracking()
+        //        .Where(c => c.Nome.ToLower()
+        //        .Contains(nome.ToLower()))
+        //        .ToList();
+
+        //    if (categoria == null)
+        //    {
+        //        return NotFound("Categoria não encontrada...");
+        //    }
+        //    return Ok(categoria);
+        //}
+
+        //[HttpGet("ComProdutos")]
+        //public ActionResult<IEnumerable<CategoriaDto>> GetCategriasComProdutos()
+        //{
+        //    try
+        //    {
+        //        var categoriasDto = _context.Categorias
+        //            .AsNoTracking()
+        //            .Include(c => c.Produtos)
+        //            .Where(c => c.CategoriaId <= 5)
+        //            .ToList();
+
+        //        if (categoriasDto == null || !categoriasDto.Any())
+        //        {
+        //            return NotFound("Nenhuma categoria encontrada...");
+        //        }
+
+        //        var categoriaDto = _mapper.Map<List<CategoriaDto>>(categorias);
+
+        //        return Ok(categoriaDto);
+        //    }
+        //    catch (Exception)
+        //    {
+        //        return StatusCode(StatusCodes.Status500InternalServerError,
+        //            "Ocorreu um problema ao tratar sua solicitação");
+        //    }
+        //}
 
 
         [HttpPost]
-        public ActionResult Post(CategoriaDto categoriaDto)
+        public ActionResult<CategoriaDto> Post(CategoriaDto categoriaDto)
         {
-            if (categoriaDto == null || string.IsNullOrWhiteSpace(categoriaDto.Nome))
+            if (categoriaDto == null)
                 return BadRequest("Nome da categoria é obrigatório.");
 
-            // Convertendo DTO para Entidade
-            var categoria = new Categoria
-            {
-                Nome = categoriaDto.Nome,
-                ImagemUrl = categoriaDto.ImagemUrl
-            };
-
-            _context.Categorias.Add(categoria);
-            _context.SaveChanges();
-
-            return CreatedAtRoute("ObterCategoria", new { id = categoria.CategoriaId }, categoria);
+            var categoriaCriada = _service.Add(categoriaDto);
+            return CreatedAtRoute("ObterCategoria", new { id = categoriaCriada.CategoriaId }, categoriaCriada);
         }
 
-        [HttpPut]
-        public ActionResult Put(int id, CategoriaDto categoriaDto)
+        [HttpPut("{id:int}")]
+        public ActionResult<CategoriaDto> Put(int id, CategoriaDto categoriaDto)
         {
-            if (id != categoriaDto.CategoriaId)
-            {
-                return BadRequest();
-            }
-            _context.Entry(categoriaDto).State = Microsoft.EntityFrameworkCore.EntityState.Modified;
-            _context.SaveChanges();
+            var categoriaAtualizada = _service.Update(id, categoriaDto);
+            if (categoriaAtualizada == null)
+                return NotFound("Categoria não encontrada.");
 
-            return Ok(categoriaDto);
-
+            return Ok(categoriaAtualizada);
         }
 
         [HttpDelete]
-        public ActionResult<CategoriaDto> Delete(int id)
+        public ActionResult Delete(int id)
         {
-            var categoria = _context.Categorias.FirstOrDefault(c => c.CategoriaId == id);
+            bool removido = _service.Delete(id);
 
-            if (categoria is null)
-            {
+            if (!removido)
                 return NotFound("Categoria não localizada");
-            }
-            _context.Categorias.Remove(categoria);
-            _context.SaveChanges();
-            return Ok(categoria);
+
+            return NoContent();
         }
     }
 }

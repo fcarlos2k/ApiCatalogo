@@ -1,6 +1,7 @@
 ﻿using APICatalogo.Context;
 using APICatalogo.DTOs;
 using APICatalogo.Models;
+using APICatalogo.Repository.Interfaces;
 using AutoMapper;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -11,14 +12,11 @@ namespace APICatalogo.Controllers
     [ApiController]
     public class ProdutosController : ControllerBase
     {
-        private readonly AppDbContext _context;
+        private readonly IProduto _service;
 
-        private readonly IMapper _mapper;
-
-        public ProdutosController(AppDbContext context, IMapper mapper)
+        public ProdutosController(IProduto service)
         {
-            _context = context;
-            _mapper = mapper;
+            _service = service;
         }
 
         [HttpGet]
