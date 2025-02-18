@@ -8,9 +8,9 @@ namespace APICatalogo.Repository.Interfaces
     public interface IProduto
     {
         IEnumerable<ProdutoDto> Get();
-        IEnumerable<ProdutoDto> Get(int id);
+        ProdutoDto Get(int id);
         ProdutoDto Post(ProdutoDto produtoDto);
         ProdutoDto Put(int id, ProdutoDto produtoDto);
-        ProdutoDto Delete(int id);
+        bool Delete(int id);
     }
 }

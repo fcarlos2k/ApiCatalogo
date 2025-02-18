@@ -4,6 +4,7 @@ using APICatalogo.Models;
 using APICatalogo.Repository.Interfaces;
 using AutoMapper;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 
 namespace APICatalogo.Repository.Services;
 
@@ -20,33 +21,48 @@ public class ProdutoService : IProduto
 
     public IEnumerable<ProdutoDto> Get()
     {
-        throw new NotImplementedException();
+        var produtos = _context.Produtos.AsNoTracking().Take(10).ToList();
+        return _mapper.Map<IEnumerable<ProdutoDto>>(produtos);
     }
 
-    public IEnumerable<ProdutoDto> Get(int id)
+    public ProdutoDto Get(int id)
     {
-        throw new NotImplementedException();
+        var produto = _context.Produtos.AsNoTracking().FirstOrDefault(p => p.ProdutoId == id);
+        return _mapper.Map<ProdutoDto>(produto);
     }
 
     public ProdutoDto Post(ProdutoDto produtoDto)
     {
-        throw new NotImplementedException();
+        if (produtoDto is null)
+            return null;
+
+        var categoriaExiste = _context.Categorias.Any(c => c.CategoriaId == produtoDto.CategoriaId);
+        if (!categoriaExiste) 
+            return null;
+        
+        var produto = _mapper.Map<Produto>(produtoDto);
+        _context.Produtos.Add(produto);
+        _context.SaveChanges();
+
+        return _mapper.Map<ProdutoDto>(produto);
     }
 
     public ProdutoDto Put(int id, ProdutoDto produtoDto)
     {
-        throw new NotImplementedException();
+        var produto = _context.Produtos.FirstOrDefault(p => p.ProdutoId == id);
+        if (produto == null) return null;
+
+        _mapper.Map(produtoDto, produto);
+        _context.SaveChanges();
+        return _mapper.Map<ProdutoDto>(produto);
     }
 
     public bool Delete(int id)
     {
         var produto = _context.Produtos.FirstOrDefault(p => p.ProdutoId == id);
+        if (produto == null) return false;
 
-        if (produto == null)
-        {
-            return false;
-        }
-        _context.Categorias.Remove(produto);
+        _context.Produtos.Remove(produto);
         _context.SaveChanges();
         return true;
     }

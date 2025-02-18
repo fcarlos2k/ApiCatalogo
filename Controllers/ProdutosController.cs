@@ -3,6 +3,7 @@ using APICatalogo.DTOs;
 using APICatalogo.Models;
 using APICatalogo.Repository.Interfaces;
 using AutoMapper;
+using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -24,10 +25,10 @@ namespace APICatalogo.Controllers
         {
             try
             {
-                var produtos = _context.Produtos.AsNoTracking().Take(10).ToList();
-                if (produtos is null)
+                var produtos = _service.Get();
+                if (produtos == null || !produtos.Any())
                 {
-                    return NotFound("Produtos não encontrados...");
+                    return NotFound("Nenhum produto encontrado...");
                 }
                 return Ok(produtos);
             }
@@ -43,12 +44,12 @@ namespace APICatalogo.Controllers
         {
             try
             {
-                var produto = _context.Produtos.AsNoTracking().FirstOrDefault(p => p.ProdutoId == id);
-                if (produto == null)
+                var produtoDto = _service.Get(id);
+                if (produtoDto == null)
                 {
                     return NotFound("Produto não encontrado...");
                 }
-                return Ok(produto);
+                return Ok(produtoDto);
             }
             catch (Exception)
             {
@@ -62,23 +63,14 @@ namespace APICatalogo.Controllers
         {
             try
             {
+                //var categoriaExiste = _service.Categorias.Any(c => c.CategoriaId == produtoDto.CategoriaId);
+                //if (produtoDto is null || !categoriaExiste)
+
                 if (produtoDto is null)
-                    return BadRequest();
+                    return BadRequest("Dados invalidos...");
 
-                var categoriaExiste = _context.Categorias.Any(c => c.CategoriaId == produtoDto.CategoriaId);
-                if (!categoriaExiste)
-                {
-                    return BadRequest("Categoria inválida. Certifique-se de que a categoria existe.");
-                }
-
-                var produto = _mapper.Map<Produto>(produtoDto);
-
-                _context.Produtos.Add(produto);
-                _context.SaveChanges();
-
-                var produtoRetorno = _mapper.Map<ProdutoDto>(produto);
-
-                return new CreatedAtRouteResult("ObterProduto", new { id = produto.ProdutoId }, produtoRetorno);
+                var produtoCriado = _service.Post(produtoDto);
+                return CreatedAtRoute("ObterProduto", new { id = produtoCriado.ProdutoId }, produtoCriado);
             }
             catch (Exception)
             {
@@ -90,31 +82,41 @@ namespace APICatalogo.Controllers
         [HttpPut]
         public ActionResult<ProdutoDto> Put(int id, ProdutoDto produtoDto)
         {
-            if (id != produtoDto.ProdutoId)
+            try
             {
-                return BadRequest();
-            }
-            _context.Entry(produtoDto).State = Microsoft.EntityFrameworkCore.EntityState.Modified;
-            _context.SaveChanges();
+                var produtoAtualizado = _service.Put(id, produtoDto);
+                if (produtoAtualizado == null)
+                    return NotFound("Produto não localizado.");
 
-            return Ok(produtoDto);
+                return Ok(produtoAtualizado);
+            }
+            catch (Exception)
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError,
+              "Ocorreu um problema ao tratar sua solicitação");
+            }
 
         }
 
         [HttpDelete]
         public ActionResult<ProdutoDto> Delete(int id)
         {
-            var produto = _context.Produtos.FirstOrDefault(p => p.ProdutoId == id);
-
-            if (produto is null)
+            try
             {
-                return NotFound("Produto não localizado");
+                bool produtoRemovido = _service.Delete(id);
+
+                if (!produtoRemovido)
+                    return NotFound("Produto não localizado");
+
+                return NoContent();
             }
-            _context.Produtos.Remove(produto);
-            _context.SaveChanges();
-            return Ok(produto);
+            catch (Exception)
+            {
+
+                return StatusCode(StatusCodes.Status500InternalServerError,
+                  "Ocorreu um problema ao tratar sua solicitação");
+            }
+
         }
-
-
     }
 }

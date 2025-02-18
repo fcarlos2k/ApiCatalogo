@@ -6,7 +6,6 @@ using AutoMapper;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
-
 namespace APICatalogo.Controllers
 {
     [Route("[controller]")]
@@ -19,8 +18,6 @@ namespace APICatalogo.Controllers
         {
             _service = service;
         }
-
-
 
         [HttpGet]
         public ActionResult<IEnumerable<CategoriaDto>> Get()
@@ -37,7 +34,7 @@ namespace APICatalogo.Controllers
             catch (Exception)
             {
                 return StatusCode(StatusCodes.Status500InternalServerError,
-                    "Ocorreu um problema ao tratar sua solicitação");
+                "Ocorreu um problema ao tratar sua solicitação");
             }
         }
 
@@ -56,33 +53,51 @@ namespace APICatalogo.Controllers
             catch (Exception)
             {
                 return StatusCode(StatusCodes.Status500InternalServerError,
-                    "Ocorreu um problema ao tratar sua solicitação");
+                "Ocorreu um problema ao tratar sua solicitação");
             }
         }
 
         [HttpGet("buscar/{nome}")]
         public ActionResult<IEnumerable<CategoriaDto>> GetPorParteDoNome(string nome)
         {
-            var categoriasDto = _service.GetPorParteDoNome(nome);
-
-            if (categoriasDto == null || !categoriasDto.Any())
+            try
             {
-                return NotFound("Nenhuma categoria encontrada...");
+                var categoriasDto = _service.GetPorParteDoNome(nome);
+
+                if (categoriasDto == null || !categoriasDto.Any())
+                {
+                    return NotFound("Nenhuma categoria encontrada...");
+                }
+                return Ok(categoriasDto);
+
             }
-            return Ok(categoriasDto);
+            catch (Exception)
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError,
+                "Ocorreu um problema ao tratar sua solicitação");
+            }
         }
 
 
         [HttpGet("ComProdutos")]
         public ActionResult<IEnumerable<CategoriaDto>> GetCategriasComProdutos()
         {
-            var categoriasDto = _service.GetCategriasComProdutos();
-
-            if (categoriasDto == null || !categoriasDto.Any())
+            try
             {
-                return NotFound("Nenhuma categoria encontrada...");
+                var categoriasDto = _service.GetCategriasComProdutos();
+
+                if (categoriasDto == null || !categoriasDto.Any())
+                {
+                    return NotFound("Nenhuma categoria encontrada...");
+                }
+                return Ok(categoriasDto);
             }
-            return Ok(categoriasDto);
+            catch (Exception)
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError,
+                "Ocorreu um problema ao tratar sua solicitação");
+            }
+
         }
 
 
@@ -134,32 +149,65 @@ namespace APICatalogo.Controllers
         [HttpPost]
         public ActionResult<CategoriaDto> Post(CategoriaDto categoriaDto)
         {
-            if (categoriaDto == null)
-                return BadRequest("Nome da categoria é obrigatório.");
+            try
+            {
+                // Valida o DTO
+                var notificationContext = categoriaDto.Validate();
 
-            var categoriaCriada = _service.Add(categoriaDto);
-            return CreatedAtRoute("ObterCategoria", new { id = categoriaCriada.CategoriaId }, categoriaCriada);
+                // Se houver erros, retorna os erros
+                if (notificationContext.HasNotifications)
+                {
+                    return BadRequest(new { errors = notificationContext.Notifications });
+                }
+
+                //   if (categoriaDto == null)
+                //       return BadRequest("Nome da categoria é obrigatório.");
+
+                var categoriaCriada = _service.Add(categoriaDto);
+                return CreatedAtRoute("ObterCategoria", new { id = categoriaCriada.CategoriaId }, categoriaCriada);
+            }
+            catch (Exception)
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError,
+                "Ocorreu um problema ao tratar sua solicitação");
+            }
         }
 
         [HttpPut("{id:int}")]
         public ActionResult<CategoriaDto> Put(int id, CategoriaDto categoriaDto)
         {
-            var categoriaAtualizada = _service.Update(id, categoriaDto);
-            if (categoriaAtualizada == null)
-                return NotFound("Categoria não encontrada.");
+            try
+            {
+                var categoriaAtualizada = _service.Update(id, categoriaDto);
+                if (categoriaAtualizada == null)
+                    return NotFound("Categoria não encontrada.");
 
-            return Ok(categoriaAtualizada);
+                return Ok(categoriaAtualizada);
+            }
+            catch (Exception)
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError,
+                "Ocorreu um problema ao tratar sua solicitação");
+            }
         }
 
         [HttpDelete]
         public ActionResult Delete(int id)
         {
-            bool removido = _service.Delete(id);
+            try
+            {
+                bool removido = _service.Delete(id);
 
-            if (!removido)
-                return NotFound("Categoria não localizada");
+                if (!removido)
+                    return NotFound("Categoria não localizada");
 
-            return NoContent();
+                return NoContent();
+            }
+            catch (Exception)
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError,
+                "Ocorreu um problema ao tratar sua solicitação");
+            }
         }
     }
 }
